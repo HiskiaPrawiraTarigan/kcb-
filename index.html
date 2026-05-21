@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Route Finder - Medan → Berastagi</title>
+    <link rel="stylesheet" href="styles.css">
+    
+    <!-- Leaflet CSS for OpenStreetMap -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+</head>
+<body>
+    <div class="app">
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>⚙️ Kontrol</h2>
+            </div>
+
+            <div class="sidebar-section">
+                <label class="form-label">Titik Awal</label>
+                <select id="startNode" class="form-select">
+                    <option value="Medan">Medan</option>
+                    <option value="Padang Bulan">Padang Bulan</option>
+                    <option value="Simpang Selayang">Simpang Selayang</option>
+                    <option value="Tuntuntan">Tuntuntan</option>
+                    <option value="Pancur Batu">Pancur Batu</option>
+                    <option value="Rumah Sumbul">Rumah Sumbul</option>
+                    <option value="Sembahe">Sembahe</option>
+                    <option value="Sibolangit">Sibolangit</option>
+                    <option value="Bandar Baru">Bandar Baru</option>
+                    <option value="Berastagi">Berastagi</option>
+                </select>
+            </div>
+
+            <div class="sidebar-section">
+                <label class="form-label">Titik Tujuan</label>
+                <select id="goalNode" class="form-select">
+                    <option value="Medan">Medan</option>
+                    <option value="Padang Bulan">Padang Bulan</option>
+                    <option value="Simpang Selayang">Simpang Selayang</option>
+                    <option value="Tuntuntan">Tuntuntan</option>
+                    <option value="Pancur Batu">Pancur Batu</option>
+                    <option value="Rumah Sumbul">Rumah Sumbul</option>
+                    <option value="Sembahe">Sembahe</option>
+                    <option value="Sibolangit">Sibolangit</option>
+                    <option value="Bandar Baru">Bandar Baru</option>
+                    <option value="Berastagi" selected>Berastagi</option>
+                </select>
+            </div>
+
+            <div class="sidebar-section">
+                <label class="form-label">Algoritma</label>
+                <div class="radio-group">
+                    <label class="radio-label">
+                        <input type="radio" name="algorithm" value="dijkstra" checked>
+                        Dijkstra
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="algorithm" value="bfs">
+                        BFS
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="algorithm" value="greedy">
+                        Greedy
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="algorithm" value="compare">
+                        Bandingkan Semua
+                    </label>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <label class="form-label">Visualisasi</label>
+                <div class="radio-group">
+                    <label class="radio-label">
+                        <input type="radio" name="visualization" value="diagram" checked>
+                        Diagram
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="visualization" value="map">
+                        Peta
+                    </label>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <button id="analyzeBtn" class="btn btn-primary btn-block">
+                    🔍 Analisis Rute
+                </button>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="legend">
+                    <h4>Legenda</h4>
+                    <div class="legend-item">
+                        <span class="legend-dot" style="background: #10B981;"></span>
+                        <span>Titik Awal</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-dot" style="background: #EF4444;"></span>
+                        <span>Titik Tujuan</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-dot" style="background: #FBBF24;"></span>
+                        <span>Bagian Rute</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-dot" style="background: #FFFFFF; border: 2px solid #333;"></span>
+                        <span>Dieksplorasi</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main">
+            <!-- HERO SECTION -->
+            <section class="hero">
+                <h1>🗺️ Route Finder: Medan → Berastagi</h1>
+                <p>Aplikasi interaktif untuk membandingkan algoritma pencarian rute: BFS, Greedy Best-First Search, dan Dijkstra</p>
+            </section>
+
+            <!-- RESULTS SECTION (Hidden initially) -->
+            <div id="resultsSection" class="results-section" style="display: none;">
+
+                <!-- SINGLE ALGORITHM RESULTS -->
+                <div id="singleResultDiv" class="single-result">
+                    <div class="algo-header">
+                        <h2 id="algoTitle">Hasil Analisis</h2>
+                        <p id="algoDesc" class="algo-description"></p>
+                    </div>
+
+                    <!-- METRICS -->
+                    <div class="metrics">
+                        <div class="metric-card">
+                            <div class="metric-label">Total Jarak</div>
+                            <div class="metric-value" id="totalDistance">-</div>
+                            <div class="metric-help">Jarak optimal ditemukan</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Lokasi Dilalui</div>
+                            <div class="metric-value" id="numNodesRoute">-</div>
+                            <div class="metric-help">Nodes dalam rute</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Nodes Dieksplorasi</div>
+                            <div class="metric-value" id="nodesExplored">-</div>
+                            <div class="metric-help">Total pencarian</div>
+                        </div>
+                    </div>
+
+                    <!-- ROUTE PATH -->
+                    <div class="route-box">
+                        <strong>Rute Hasil:</strong>
+                        <div id="routePath" class="route-path">-</div>
+                    </div>
+
+                    <!-- VISUALIZATION -->
+                    <div class="visualization-container">
+                        <h3>📊 Visualisasi Hasil</h3>
+                        
+                        <!-- Visualization Tabs -->
+                        <div id="singleVizTabs" class="visualization-tabs">
+                            <button class="viz-tab-btn active" data-target="single" data-tab="canvas">📊 Diagram Graf</button>
+                            <button class="viz-tab-btn" data-target="single" data-tab="map">🗺️ Peta OpenStreetMap</button>
+                        </div>
+
+                        <!-- Canvas Visualization -->
+                        <div id="singleCanvasContainer" class="canvas-container" style="display: block;">
+                            <canvas id="graphCanvas" width="900" height="600"></canvas>
+                        </div>
+
+                        <!-- Map Visualization -->
+                        <div id="singleMapContainer" style="display: none; width: 100%; height: 600px; border-radius: 12px; margin-top: 10px;">
+                            <div id="leafletMap" style="width: 100%; height: 100%; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); border: 1.5px solid rgba(122, 127, 82, 0.4);"></div>
+                        </div>
+                    </div>
+
+                    <!-- DETAILS TABLE -->
+                    <div class="details-section">
+                        <h3>Detail Segmen Rute</h3>
+                        <div class="table-wrapper">
+                            <table id="routeTable" class="details-table">
+                                <thead>
+                                    <tr>
+                                        <th>No</th>
+                                        <th>Dari</th>
+                                        <th>Ke</th>
+                                        <th>Jarak (km)</th>
+                                        <th>Akumulasi (km)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="routeTableBody">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- EXPLORATION ORDER -->
+                    <div class="exploration-section">
+                        <h3>Urutan Eksplorasi Node</h3>
+                        <div class="code-block" id="explorationOrder">-</div>
+                    </div>
+                </div>
+
+                <!-- COMPARISON RESULTS -->
+                <div id="comparisonResultDiv" class="comparison-result" style="display: none;">
+                    <h2>Perbandingan Efisiensi Semua Algoritma</h2>
+
+                    <!-- COMPARISON CARDS -->
+                    <div class="comparison-cards">
+                        <div class="comparison-card algo-bfs">
+                            <h4>BFS</h4>
+                            <div class="comparison-stat">
+                                <div class="stat-label">Jarak Total</div>
+                                <div class="stat-value" id="bfs-distance">-</div>
+                            </div>
+                            <div class="comparison-stat">
+                                <div class="stat-label">Nodes Dieksplorasi</div>
+                                <div class="stat-value" id="bfs-explored">-</div>
+                            </div>
+                        </div>
+
+                        <div class="comparison-card algo-greedy">
+                            <h4>Greedy Best-First</h4>
+                            <div class="comparison-stat">
+                                <div class="stat-label">Jarak Total</div>
+                                <div class="stat-value" id="greedy-distance">-</div>
+                            </div>
+                            <div class="comparison-stat">
+                                <div class="stat-label">Nodes Dieksplorasi</div>
+                                <div class="stat-value" id="greedy-explored">-</div>
+                            </div>
+                        </div>
+
+                        <div class="comparison-card algo-dijkstra">
+                            <h4>Dijkstra</h4>
+                            <div class="comparison-stat">
+                                <div class="stat-label">Jarak Total</div>
+                                <div class="stat-value" id="dijkstra-distance">-</div>
+                            </div>
+                            <div class="comparison-stat">
+                                <div class="stat-label">Nodes Dieksplorasi</div>
+                                <div class="stat-value" id="dijkstra-explored">-</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- COMPARISON TABLE -->
+                    <div class="table-wrapper">
+                        <table class="comparison-table">
+                            <thead>
+                                <tr>
+                                    <th>Algoritma</th>
+                                    <th>Rute</th>
+                                    <th>Total Jarak</th>
+                                    <th>Nodes Rute</th>
+                                    <th>Nodes Dieksplorasi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="comparisonTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- OPTIMAL ROUTE -->
+                    <div class="optimal-route-section">
+                        <h3>✓ Rute Optimal (Dijkstra)</h3>
+                        <div id="optimalRouteBox" class="route-box">-</div>
+                    </div>
+
+                    <!-- VISUALIZATION -->
+                    <div class="visualization-container">
+                        <h3>📊 Visualisasi Rute Optimal</h3>
+                        
+                        <!-- Visualization Tabs -->
+                        <div id="compareVizTabs" class="visualization-tabs">
+                            <button class="viz-tab-btn active" data-target="compare" data-tab="canvas">📊 Diagram Graf</button>
+                            <button class="viz-tab-btn" data-target="compare" data-tab="map">🗺️ Peta OpenStreetMap</button>
+                        </div>
+
+                        <!-- Canvas Visualization -->
+                        <div id="compareCanvasContainer" class="canvas-container" style="display: block;">
+                            <canvas id="comparisonCanvas" width="900" height="600"></canvas>
+                        </div>
+
+                        <!-- Map Visualization — reuses the single Leaflet instance -->
+                        <div id="compareMapContainer" style="display: none; width: 100%; height: 600px; border-radius: 12px; margin-top: 10px;">
+                            <!-- Map will be moved here by JS when active -->
+                            <div id="compareMapPlaceholder" style="width:100%;height:100%;border-radius:12px;background:rgba(0,0,0,0.1);display:flex;align-items:center;justify-content:center;color:#b2a77a;font-size:1.1rem;">
+                                Klik tab ini setelah analisis untuk melihat peta
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- INFO SECTION (show when no results) -->
+            <div id="infoSection" class="info-section">
+                <div class="algorithm-info">
+                    <div class="algo-card">
+                        <h4>📊 BFS (Breadth-First Search)</h4>
+                        <p>Pencarian melebar lapis demi lapis. Complete tapi tidak optimal untuk weighted graph. Kompleksitas: O(V+E)</p>
+                    </div>
+                    <div class="algo-card">
+                        <h4>⚡ Greedy Best-First Search</h4>
+                        <p>Menggunakan heuristik untuk memandu pencarian. Cepat tapi tidak dijamin optimal. Kompleksitas: O(E log V)</p>
+                    </div>
+                    <div class="algo-card">
+                        <h4>✓ Dijkstra</h4>
+                        <p>Algoritma optimal yang menjamin rute terpendek. Digunakan di GPS profesional. Kompleksitas: O((V+E) log V)</p>
+                    </div>
+                </div>
+
+                <div class="data-section">
+                    <h3>📋 Data Aplikasi</h3>
+                    <ul>
+                        <li>Total Lokasi: <strong>10 nodes</strong></li>
+                        <li>Jalur Utama: <strong>Medan → Berastagi (65.70 km)</strong></li>
+                        <li>Alternatif: <strong>Jalur Tuntuntan (62.20 km)</strong></li>
+                        <li>Total Edge: <strong>14 connections</strong></li>
+                    </ul>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
